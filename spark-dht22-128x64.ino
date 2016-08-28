@@ -20,8 +20,6 @@ All text above, and the splash screen must be included in any redistribution
 #include "Adafruit_BMP085.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
-#include "U8glib.h"
-
 
 #define OLED_RESET D4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -30,10 +28,13 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define DHTPIN     D2
 
 void dht_wrapper();
-char cmd[64], buf[64];
+char buf[64];
+unsigned long co2;
 double t;
 double h;
-unsigned long co2;
+float pressure;
+float temp2;
+float alti;
 
 Adafruit_BMP085 bmp;
 
@@ -54,10 +55,6 @@ void dht_wrapper() {
 }
 
 void setup()   {
-  Particle.variable("t", t);
-  Particle.variable("h", h);
-  Particle.variable("co2", co2);
-
   Serial.begin(9600);
   Serial1.begin(9600);
 
@@ -78,39 +75,48 @@ void loop() {
   float temp2 = bmp.readTemperature();
   float alti = bmp.readAltitude();
 
+  pressure = 0.0;
+  temp2 = 0.0;
+  alti = 0.0;
+
   if (result == DHTLIB_OK) {
     t = DHT.getCelsius();
     h = DHT.getHumidity();
     co2 = co2val(co2run(co2cmd));
 
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0,0);
-    sprintf(buf, "temp: %.1f °C", t);
-    display.println(buf);
-    sprintf(buf, "humid: %.1f Rh", h);
-    display.println(buf);
-    sprintf(buf, "CO2: %d ppm", co2);
-    display.println(buf);
-
-    sprintf(buf, "T: %.1f *C", temp2);
-    display.println(buf);
-    sprintf(buf, "P: %.1f hPa", pressure);
-    display.println(buf);
-    sprintf(buf, "A: %.1f m", alti);
-    display.println(buf);
-
-    display.display();
-  } else {
+    /*
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0,0);
     display.println("loading...");
     display.display();
+    */
     /*display.setTextColor(BLACK, WHITE);*/
   }
+
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  sprintf(buf, "%.1f °C", t);
+  display.println(buf);
+
+  /*
+  sprintf(buf, "humid: %.1f Rh", h);
+  display.println(buf);
+  sprintf(buf, "CO2: %d ppm", co2);
+  display.println(buf);
+
+  sprintf(buf, "T: %.1f *C", temp2);
+  display.println(buf);
+  sprintf(buf, "P: %.1f hPa", pressure);
+  display.println(buf);
+  sprintf(buf, "A: %.1f m", alti);
+  display.println(buf);
+  */
+
+  display.display();
 
   delay(2000);
 }
