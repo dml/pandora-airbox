@@ -16,7 +16,7 @@ BSD license, check license.txt for more information
 All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
 
-#include "Adafruit_mfGFX.h"
+#include "Adafruit_mfGFX/Adafruit_mfGFX.h"
 #include "Adafruit_SSD1306.h"
 
 // the memory buffer for the LCD

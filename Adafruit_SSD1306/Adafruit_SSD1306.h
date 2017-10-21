@@ -21,7 +21,7 @@ All text above, and the splash screen must be included in any redistribution
 
 
 #include "application.h"
-#include "Adafruit_mfGFX.h"
+#include "Adafruit_mfGFX/Adafruit_mfGFX.h"
 
 
 #define BLACK 0

@@ -1,28 +1,13 @@
-#include "PietteTech_DHT.h"
-#include "Adafruit_BMP085.h"
-#include "Adafruit_SSD1306.h"
+#include "Adafruit_SSD1306/Adafruit_SSD1306.h"
+#include "Adafruit_HTU21DF/Adafruit_HTU21DF.h"
 
-#define OLED_RESET D4
-
-Adafruit_SSD1306 display(OLED_RESET);
-
-#define DHTTYPE DHT22
-#define DHTPIN D2
+Adafruit_SSD1306 display(D4);
+Adafruit_HTU21DF htu = Adafruit_HTU21DF();
 
 unsigned long s8_co2;
 
-double dht22_temperature,
-       dht22_humidity;
-
-float bmp180_pressure,
-      bmp180_temperature,
-      bmp180_altitude;
-
-void dht_wrapper();
-
-Adafruit_BMP085 bmp;
-
-PietteTech_DHT DHT(DHTPIN, DHTTYPE, dht_wrapper);
+float humidity,
+      temperature;
 
 byte co2cmd[] = {
   0xFE,
@@ -34,10 +19,6 @@ byte co2cmd[] = {
   0X25
 };
 
-void dht_wrapper() {
-  DHT.isrCallback();
-}
-
 void setup()   {
   pinMode(D7, INPUT_PULLDOWN);
 
@@ -45,7 +26,7 @@ void setup()   {
   Serial1.begin(9600);
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.setRotation(2);
+  display.setRotation(0);
   display.clearDisplay();
   display.setFont(COMICS_8);
   display.setTextSize(1);
@@ -56,11 +37,7 @@ void setup()   {
   display.println("RH%");
   display.setCursor(0,37);
   display.println("CO2");
-  display.setCursor(64,37);
-  display.println("hPa");
   display.display();
-
-  bmp.begin();
 
   delay(2000);
 }
@@ -79,20 +56,9 @@ void loop() {
 
   showStatus("s");
 
+  temperature = htu.readTemperature();
+  humidity = htu.readHumidity();
   s8_co2 = co2val(co2run(co2cmd));
-
-  bmp180_pressure = bmp.readPressure() / 100.0;
-  bmp180_temperature = bmp.readTemperature();
-  bmp180_altitude = bmp.readAltitude();
-
-  int result = DHT.acquireAndWait(0);
-
-  if (result == DHTLIB_OK) {
-    dht22_temperature = DHT.getCelsius();
-    dht22_humidity = DHT.getHumidity();
-  }
-
-  dht22_temperature = (1 - 0.1) * dht22_temperature;
 
   showStatus("d");
 
@@ -102,13 +68,11 @@ void loop() {
   display.setTextColor(WHITE);
   display.setTextSize(2);
   display.setCursor(0,9);
-  display.println(String::format("%.0f", dht22_temperature));
+  display.println(String::format("%.0f", temperature));
   display.setCursor(64,9);
-  display.println(String::format("%.0f", dht22_humidity));
+  display.println(String::format("%.0f", humidity));
   display.setCursor(0,46);
   display.println(String::format("%d",   s8_co2));
-  display.setCursor(64,46);
-  display.println(String::format("%.0f", bmp180_pressure));
   display.display();
 
   if (digitalRead(D7) == HIGH) {
@@ -122,17 +86,13 @@ void loop() {
 
       bool stat = Particle.publish("pandora/data",
         String::format("{\
-          \"t1\":\"%.1f\",\
-          \"t2\":\"%.1f\",\
+          \"t\":\"%.1f\",\
           \"h\":\"%.1f\",\
-          \"co2\":\"%d\",\
-          \"hpa\":\"%.1f\"\
+          \"co2\":\"%d\"\
         }",
-        dht22_temperature,
-        bmp180_temperature,
-        dht22_humidity,
-        s8_co2,
-        bmp180_pressure
+        temperature,
+        humidity,
+        s8_co2
       ));
 
       Particle.process();
